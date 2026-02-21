@@ -1,0 +1,42 @@
+services:
+  mongo:
+    image: mongo:8
+    container_name: outbox-mongo
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: outbox-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  api:
+    build: .
+    container_name: outbox-api
+    ports:
+      - "3000:3000"
+    environment:
+      MONGO_URI: mongodb://outbox-mongo:27017/?replicaSet=rs0
+      DB_NAME: outbox_demo
+    depends_on:
+      - mongo
+
+  worker:
+    build: .
+    container_name: outbox-worker
+    command: ["npm", "run", "dev:worker"]
+    environment:
+      MONGO_URI: mongodb://outbox-mongo:27017/?replicaSet=rs0
+      DB_NAME: outbox_demo
+      RABBIT_URL: amqp://outbox-rabbitmq:5672
+    depends_on:
+      - mongo
+      - rabbitmq
+
+volumes:
+  mongo_data:

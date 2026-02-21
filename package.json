@@ -1,0 +1,37 @@
+{
+  "name": "test-rabbitmq",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev:api": "ts-node-dev --respawn --transpile-only src/api.ts",
+    "build": "tsc",
+    "start:api": "node dist/api.js",
+    "dev:worker": "ts-node-dev --respawn --transpile-only src/worker.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EricHarkat/test-rabbitMQ.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/EricHarkat/test-rabbitMQ/issues"
+  },
+  "homepage": "https://github.com/EricHarkat/test-rabbitMQ#readme",
+  "dependencies": {
+    "amqplib": "^0.10.9",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "mongodb": "^7.1.0"
+  },
+  "devDependencies": {
+    "@types/amqplib": "^0.10.8",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.3.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.9.3"
+  }
+}
