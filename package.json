@@ -8,7 +8,8 @@
     "dev:api": "ts-node-dev --respawn --transpile-only src/api.ts",
     "build": "tsc",
     "start:api": "node dist/api.js",
-    "dev:worker": "ts-node-dev --respawn --transpile-only src/worker.ts"
+    "dev:worker": "ts-node-dev --respawn --transpile-only src/worker.ts",
+    "dev:consumer": "ts-node-dev --respawn --transpile-only src/consumer.ts"
   },
   "repository": {
     "type": "git",

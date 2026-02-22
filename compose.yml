@@ -38,5 +38,16 @@ services:
       - mongo
       - rabbitmq
 
+  consumer:
+    build: .
+    container_name: outbox-consumer
+    command: ["npm", "run", "dev:consumer"]
+    environment:
+      RABBIT_URL: amqp://outbox-rabbitmq:5672
+      QUEUE_NAME: orders-service
+      ROUTING_KEY: OrderCreated
+    depends_on:
+      - rabbitmq
+
 volumes:
   mongo_data:

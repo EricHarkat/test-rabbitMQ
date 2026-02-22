@@ -104,3 +104,8 @@ Fields:
 - lastError
 
 - lockedAt
+
+## RabbitMq
+
+- Monitoring : http://localhost:15672
+- Login by default : guest / guest
