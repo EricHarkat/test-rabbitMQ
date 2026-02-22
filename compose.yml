@@ -46,8 +46,11 @@ services:
       RABBIT_URL: amqp://outbox-rabbitmq:5672
       QUEUE_NAME: orders-service
       ROUTING_KEY: OrderCreated
+      MONGO_URI: mongodb://outbox-mongo:27017/?replicaSet=rs0
+      DB_NAME: outbox_demo
     depends_on:
       - rabbitmq
+      - mongo
 
 volumes:
   mongo_data:

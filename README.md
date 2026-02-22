@@ -109,3 +109,19 @@ Fields:
 
 - Monitoring : http://localhost:15672
 - Login by default : guest / guest
+
+## Summary 
+
+Le Order Service est découplé des autres services.
+Il publie des événements métier (faits qui se sont produits (event)), sans connaître les consommateurs.
+
+Lorsqu’un client crée une commande, le service insère l’ordre et l’événement correspondant dans la collection outbox, dans une transaction MongoDB.
+
+Un worker lit ensuite les événements non publiés dans l’outbox et les publie vers un exchange RabbitMQ, puis marque ces événements comme publiés.
+
+L’exchange route les messages vers une ou plusieurs queues en fonction du routing key et du type d’exchange (topic).
+
+Les consumers écoutent leurs queues respectives et traitent les messages reçus.
+
+Comme RabbitMQ fonctionne en at-least-once delivery, un message peut être livré plusieurs fois.
+Pour garantir l’idempotence, le consumer enregistre chaque message traité dans une collection inbox avec un index unique sur messageId, afin d’éviter tout traitement en double.
