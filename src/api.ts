@@ -1,9 +1,12 @@
 import express, { Request, Response } from "express";
 import { getClient, getDb } from "./db";
+import { ObjectId } from "mongodb";
 import "dotenv/config";
 
 const app = express();
 app.use(express.json());
+
+const DB_NAME = process.env.DB_NAME ?? "outbox_demo";
 
 app.get("/health", (_req: Request, res: Response) => {
   res.json({ ok: true, service: "api" });
@@ -24,14 +27,14 @@ app.post("/orders", async (req: Request, res: Response) => {
   }
 
   const client = await getClient();
-  const db = await getDb();
-
   const session = client.startSession();
 
   try {
-    let orderId: string = "";
+    let orderId = "";
 
     await session.withTransaction(async () => {
+      // IMPORTANT: use the same client + session inside the transaction
+      const db = client.db(DB_NAME);
       const orders = db.collection("orders");
       const outbox = db.collection("outbox");
 
@@ -68,7 +71,67 @@ app.post("/orders", async (req: Request, res: Response) => {
   }
 });
 
+app.patch("/orders/:id", async (req, res) => {
+  const { id } = req.params;
+  const { items } = req.body as { items?: Array<{ sku: string; qty: number }> };
+
+  if (!items || !Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ error: "items is required (non-empty array)" });
+  }
+
+  const client = await getClient();
+  const session = client.startSession();
+
+  try {
+    await session.withTransaction(async () => {
+      // IMPORTANT: use the same client + session inside the transaction
+      const db = client.db(DB_NAME);
+      const orders = db.collection("orders");
+      const outbox = db.collection("outbox");
+
+      const orderId = new ObjectId(id);
+
+      // 1) Update order
+      const upd = await orders.updateOne(
+        { _id: orderId },
+        { $set: { items, updatedAt: new Date() } },
+        { session }
+      );
+
+      if (upd.matchedCount === 0) {
+        // Force rollback transaction
+        throw new Error("ORDER_NOT_FOUND");
+      }
+
+      // 2) Insert outbox event
+      await outbox.insertOne(
+        {
+          type: "OrderUpdated",
+          aggregateId: orderId, // ObjectId
+          payload: { orderId, items },
+          createdAt: new Date(),
+          publishedAt: null,
+          attempts: 0,
+          lastError: null,
+        },
+        { session }
+      );
+    });
+
+    res.json({ ok: true });
+  } catch (e: any) {
+    if (String(e?.message) === "ORDER_NOT_FOUND") {
+      return res.status(404).json({ error: "order not found" });
+    }
+    console.error(e);
+    res.status(500).json({ error: "update failed" });
+  } finally {
+    await session.endSession();
+  }
+});
+
 app.get("/orders", async (_req: Request, res: Response) => {
+  // Here we can use getDb() (no transaction/session needed)
   const db = await getDb();
   const orders = db.collection("orders");
 

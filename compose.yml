@@ -45,7 +45,7 @@ services:
     environment:
       RABBIT_URL: amqp://outbox-rabbitmq:5672
       QUEUE_NAME: orders-service
-      ROUTING_KEY: OrderCreated
+      ROUTING_KEYS: "OrderCreated,OrderUpdated"
       MONGO_URI: mongodb://outbox-mongo:27017/?replicaSet=rs0
       DB_NAME: outbox_demo
     depends_on:

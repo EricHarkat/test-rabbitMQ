@@ -4,7 +4,12 @@ import { getDb } from "./db";
 const RABBIT_URL = process.env.RABBIT_URL ?? "amqp://outbox-rabbitmq:5672";
 const EXCHANGE = "domain-events";
 const QUEUE = process.env.QUEUE_NAME ?? "orders-service";
-const ROUTING_KEY = process.env.ROUTING_KEY ?? "OrderCreated";
+const ROUTING_KEYS = (process.env.ROUTING_KEYS && process.env.ROUTING_KEYS.trim().length > 0
+  ? process.env.ROUTING_KEYS
+  : "OrderCreated")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
 
 type InboxDoc = {
   messageId: string;
@@ -26,11 +31,13 @@ async function main() {
 
   await ch.assertExchange(EXCHANGE, "topic", { durable: true });
   const q = await ch.assertQueue(QUEUE, { durable: true });
-  await ch.bindQueue(q.queue, EXCHANGE, ROUTING_KEY);
+  for (const key of ROUTING_KEYS) {
+    await ch.bindQueue(q.queue, EXCHANGE, key);
+    }
 
   ch.prefetch(1);
 
-  console.log(`Idempotent consumer started. queue=${QUEUE} routingKey=${ROUTING_KEY}`);
+  console.log(`Consumer started. queue=${QUEUE} routingKeys=${ROUTING_KEYS.join(",")}`);
 
   await ch.consume(
     q.queue,
